@@ -62,7 +62,7 @@ Restrict network-level access to the EC2 instance before traffic reaches the ope
 
 ### Security Group Screenshot
 
-<img src="images/06-security-group.png" width="900">
+<img src="images/07-security-group.png" width="900">
 
 Security Impact:
 - Eliminates global SSH exposure (no 0.0.0.0/0)
