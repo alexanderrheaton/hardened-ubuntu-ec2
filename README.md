@@ -15,6 +15,16 @@ This project demonstrates defense-in-depth across cloud and operating system lay
 
 ---
 
+## 🖥 Environment Details
+
+- Cloud Provider: AWS
+- Instance Type: t2.micro
+- OS: Ubuntu 22.04 LTS
+- Region: (optional)
+- Access Method: SSH key-based authentication
+
+---
+
 ## 🏗 Architecture
 
 ```mermaid
@@ -26,23 +36,41 @@ flowchart TD
     D --> F[Nginx - HTTP/HTTPS]
     E --> G[Fail2Ban Protection]
 ```
+---
+
+Traffic is evaluated in the following order:
+
+1. AWS Security Group (network boundary)
+2. UFW host firewall
+3. SSH daemon configuration
+4. Fail2Ban intrusion mitigation
+
+Each layer enforces independent controls, ensuring no single misconfiguration exposes the system.
 
 ---
 
-## ☁️ Cloud Configuration (AWS Layer)
+## ☁️ Cloud Security Group Configuration
 
-### Security Group Hardening
+### Objective
+Restrict network-level access to the EC2 instance before traffic reaches the operating system.
 
-Inbound Rules Configured:
+### Inbound Rules Configured
 
-- SSH (22) → Restricted to single public IP (/32)
-- HTTP (80) → Allowed when required
-- HTTPS (443) → Allowed when required
+- SSH (Port 22) → Restricted to single public IP (/32)
+- HTTP (Port 80) → Allowed only when required
+- HTTPS (Port 443) → Allowed only when required
 
-Security Rationale:
+### Security Group Screenshot
+
+<img src="images/06-security-group.png" width="900">
+
+Security Impact:
 - Eliminates global SSH exposure (no 0.0.0.0/0)
-- Reduces brute-force attack surface
 - Enforces perimeter-level access control
+- Reduces brute-force attack surface before OS firewall
+- Demonstrates cloud-layer defense before host-layer filtering
+
+The instance was deployed in a public subnet but hardened to minimize exposed attack surface.
 
 ---
 
@@ -97,15 +125,23 @@ Security Impact:
 
 ---
 
-## 3️⃣ SSH Hardening
+## 🔐 SSH Hardening Configuration
 
-### Edit SSH Configuration
+### Objective
+
+Harden SSH access to reduce attack surface, enforce key-based authentication, and restrict administrative access to an approved user.
+
+---
+
+### Step 1: Modify SSH Daemon Configuration
+
+Edit the SSH configuration file:
 
 ```bash
 sudo nano /etc/ssh/sshd_config
 ```
 
-Configured the following:
+The following directives were enforced:
 
 ```
 PermitRootLogin no
@@ -115,37 +151,65 @@ MaxAuthTries 3
 LoginGraceTime 30
 AllowUsers alexadmin
 ```
-<img src="images/04-ssh-config.png" width="700">
 
-Restart SSH:
+---
+
+### Configuration Breakdown
+
+- `PermitRootLogin no`  
+  Disables direct root login to prevent privilege abuse.
+
+- `PasswordAuthentication no`  
+  Eliminates password-based login to mitigate brute-force and credential stuffing attacks.
+
+- `PubkeyAuthentication yes`  
+  Enforces cryptographic key-based authentication.
+
+- `MaxAuthTries 3`  
+  Limits repeated authentication attempts per session.
+
+- `LoginGraceTime 30`  
+  Reduces the time window for authentication attempts.
+
+- `AllowUsers alexadmin`  
+  Restricts SSH access to an explicitly approved administrative account.
+
+---
+
+### Step 2: Restart SSH Service
+
+Apply changes:
 
 ```bash
 sudo systemctl restart ssh
 ```
 
-Security Impact:
-- Disables root login
-- Enforces key-based authentication
-- Limits brute-force attempts
-- Restricts SSH access to approved user
-
----
-
-## 4️⃣ Configure SSH Key Access for Admin User
+Verify service status:
 
 ```bash
-sudo mkdir -p /home/alexadmin/.ssh
-sudo cp ~/.ssh/authorized_keys /home/alexadmin/.ssh/
-sudo chown -R alexadmin:alexadmin /home/alexadmin/.ssh
-sudo chmod 700 /home/alexadmin/.ssh
-sudo chmod 600 /home/alexadmin/.ssh/authorized_keys
+sudo systemctl status ssh
 ```
 
-Security Impact:
-- Enforces secure key-based authentication
-- Prevents password-based compromise
-
 ---
+
+### Security Impact
+
+This configuration:
+
+- Removes root as a remotely accessible attack vector
+- Eliminates password-based compromise risk
+- Restricts remote access to a single administrative identity
+- Reduces brute-force attack exposure
+- Enforces least-privilege access principles
+
+Combined with AWS Security Group restrictions and UFW firewall controls, SSH access is now protected at:
+
+1. Cloud perimeter layer (Security Group)
+2. Host firewall layer (UFW)
+3. Application service layer (SSH daemon configuration)
+4. Intrusion detection layer (Fail2Ban)
+
+This demonstrates layered defense (defense-in-depth) for remote administrative access.
 
 ## 5️⃣ UFW Firewall Configuration
 
@@ -265,26 +329,12 @@ sudo journalctl -u ssh
 
 ---
 
-## ☁️ Cloud Security Group Configuration
+## 🧠 Lessons Learned
 
-### Objective
-Restrict network-level access to the EC2 instance before traffic reaches the operating system.
-
-### Inbound Rules Configured
-
-- SSH (Port 22) → Restricted to single public IP (/32)
-- HTTP (Port 80) → Allowed only when required
-- HTTPS (Port 443) → Allowed only when required
-
-### Security Group Screenshot
-
-<img src="images/06-security-group.png" width="900">
-
-Security Impact:
-- Eliminates global SSH exposure (no 0.0.0.0/0)
-- Enforces perimeter-level access control
-- Reduces brute-force attack surface before OS firewall
-- Demonstrates cloud-layer defense before host-layer filtering
+- Security Groups are evaluated before host-level firewalls
+- Restricting SSH to /32 disables EC2 Instance Connect
+- Testing SSH changes in a separate session prevents lockout
+- Defense-in-depth requires controls at multiple layers
 
 ---
 
