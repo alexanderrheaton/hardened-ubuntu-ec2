@@ -20,7 +20,7 @@ This project demonstrates defense-in-depth across cloud and operating system lay
 - Cloud Provider: AWS
 - Instance Type: t2.micro
 - OS: Ubuntu 22.04 LTS
-- Region: (optional)
+- Region: us-east-1
 - Access Method: SSH key-based authentication
 
 ---
