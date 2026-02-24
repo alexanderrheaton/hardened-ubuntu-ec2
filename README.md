@@ -71,7 +71,7 @@ Security Impact:
 sudo adduser alexadmin
 ```
 <img src="images/01-adduser.png" width="700">
-<img src="images/02-adduser.png" width="700">
+
 ### Grant Sudo Privileges
 
 ```bash
@@ -83,6 +83,7 @@ sudo usermod -aG sudo alexadmin
 ```bash
 groups alexadmin
 ```
+<img src="images/02-adduser.png" width="700">
 
 Expected output includes:
 
