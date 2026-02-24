@@ -10,12 +10,14 @@ Cloud Provider: AWS
 
 🏗 Architecture
 
-Internet
-→ AWS Security Group
-→ EC2 Instance
-→ UFW Firewall
-→ SSH / Nginx
-
+```mermaid
+flowchart TD
+    A[Internet] -->|Port 22 Restricted to /32| B[AWS Security Group]
+    B --> C[EC2 Ubuntu Instance<br>t2.micro]
+    C --> D[UFW Firewall]
+    D --> E[SSH - Key Based Auth]
+    D --> F[Nginx - HTTP/HTTPS]
+    E --> G[Fail2Ban Protection]
 (You can later add a simple diagram image.)
 
 🔐 Hardening Steps Performed
