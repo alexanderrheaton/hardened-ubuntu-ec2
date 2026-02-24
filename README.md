@@ -70,7 +70,8 @@ Security Impact:
 ```bash
 sudo adduser alexadmin
 ```
-
+<img src="images/01-adduser.png" width="700">
+<img src="images/02-adduser.png" width="700">
 ### Grant Sudo Privileges
 
 ```bash
