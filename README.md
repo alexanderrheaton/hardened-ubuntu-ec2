@@ -173,6 +173,7 @@ sudo ufw enable
 ```bash
 sudo ufw status verbose
 ```
+<img src="images/03-ufw-status.png" width="700">
 
 Security Impact:
 - Implements host-based firewall
@@ -221,6 +222,7 @@ Verify:
 ```bash
 sudo fail2ban-client status sshd
 ```
+<img src="images/05-fail2ban-status.png" width="700">
 
 Security Impact:
 - Automatically bans repeated failed login attempts
@@ -260,6 +262,29 @@ systemctl list-units --type=service --state=running
 ```bash
 sudo journalctl -u ssh
 ```
+
+---
+
+## ☁️ Cloud Security Group Configuration
+
+### Objective
+Restrict network-level access to the EC2 instance before traffic reaches the operating system.
+
+### Inbound Rules Configured
+
+- SSH (Port 22) → Restricted to single public IP (/32)
+- HTTP (Port 80) → Allowed only when required
+- HTTPS (Port 443) → Allowed only when required
+
+### Security Group Screenshot
+
+<img src="images/06-security-group.png" width="900">
+
+Security Impact:
+- Eliminates global SSH exposure (no 0.0.0.0/0)
+- Enforces perimeter-level access control
+- Reduces brute-force attack surface before OS firewall
+- Demonstrates cloud-layer defense before host-layer filtering
 
 ---
 
