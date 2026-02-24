@@ -10,16 +10,17 @@ Cloud Provider: AWS
 
 🏗 Architecture
 
+## 🏗 Architecture
+
 ```mermaid
 flowchart TD
     A[Internet] -->|Port 22 Restricted to /32| B[AWS Security Group]
-    B --> C[EC2 Ubuntu Instance<br>t2.micro]
+    B --> C[EC2 Ubuntu Instance t2.micro]
     C --> D[UFW Firewall]
     D --> E[SSH - Key Based Auth]
     D --> F[Nginx - HTTP/HTTPS]
     E --> G[Fail2Ban Protection]
-(You can later add a simple diagram image.)
-
+```
 🔐 Hardening Steps Performed
 1️⃣ User & Privilege Hardening
 
