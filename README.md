@@ -1,14 +1,19 @@
-# hardened-ubuntu-ec2
-🔐 Hardened Ubuntu EC2 Deployment
-📌 Overview
+# 🔐 Hardened Ubuntu EC2 Deployment
 
-Deployed and hardened an Ubuntu Server instance on AWS EC2 to implement secure SSH access, firewall rules, and intrusion protection mechanisms.
+## 📌 Overview
 
-Instance Type: t2.micro
-OS: Ubuntu 22.04 LTS
-Cloud Provider: AWS
+Deployed and hardened an Ubuntu 22.04 LTS server on AWS EC2 to implement layered security controls including:
 
-🏗 Architecture
+- Restricted SSH access
+- Non-root administrative access
+- Key-based authentication
+- OS-level firewall configuration
+- Intrusion prevention (Fail2Ban)
+- Automatic security updates
+
+This project demonstrates defense-in-depth across cloud and operating system layers.
+
+---
 
 ## 🏗 Architecture
 
@@ -21,98 +26,262 @@ flowchart TD
     D --> F[Nginx - HTTP/HTTPS]
     E --> G[Fail2Ban Protection]
 ```
-🔐 Hardening Steps Performed
-1️⃣ User & Privilege Hardening
 
-Created non-root administrative user
+---
 
-Added user to sudo group
+## ☁️ Cloud Configuration (AWS Layer)
 
-Disabled root login via SSH
+### Security Group Hardening
 
-Restricted SSH access using AllowUsers
+Inbound Rules Configured:
 
+- SSH (22) → Restricted to single public IP (/32)
+- HTTP (80) → Allowed when required
+- HTTPS (443) → Allowed when required
+
+Security Rationale:
+- Eliminates global SSH exposure (no 0.0.0.0/0)
+- Reduces brute-force attack surface
+- Enforces perimeter-level access control
+
+---
+
+# 🔐 Operating System Hardening
+
+---
+
+## 1️⃣ System Updates
+
+```bash
+sudo apt update
+sudo apt upgrade -y
+```
+
+Security Impact:
+- Applies latest security patches
+- Reduces vulnerability exposure
+
+---
+
+## 2️⃣ Admin Account Creation & Privilege Hardening
+
+### Create Non-Root User
+
+```bash
+sudo adduser alexadmin
+```
+
+### Grant Sudo Privileges
+
+```bash
+sudo usermod -aG sudo alexadmin
+```
+
+### Verify Group Membership
+
+```bash
+groups alexadmin
+```
+
+Expected output includes:
+
+```
+alexadmin : alexadmin sudo
+```
+
+Security Impact:
+- Removes reliance on default `ubuntu` user
+- Supports least-privilege model
+- Prevents direct root access
+
+---
+
+## 3️⃣ SSH Hardening
+
+### Edit SSH Configuration
+
+```bash
+sudo nano /etc/ssh/sshd_config
+```
+
+Configured the following:
+
+```
 PermitRootLogin no
 PasswordAuthentication no
+PubkeyAuthentication yes
+MaxAuthTries 3
+LoginGraceTime 30
 AllowUsers alexadmin
+```
 
-Security Rationale:
-Reduces brute force attack surface and enforces least privilege.
+Restart SSH:
 
-2️⃣ SSH Hardening
+```bash
+sudo systemctl restart ssh
+```
 
-Disabled password authentication
+Security Impact:
+- Disables root login
+- Enforces key-based authentication
+- Limits brute-force attempts
+- Restricts SSH access to approved user
 
-Enforced key-based authentication
+---
 
-Reduced max authentication attempts
+## 4️⃣ Configure SSH Key Access for Admin User
 
-Set login grace time
+```bash
+sudo mkdir -p /home/alexadmin/.ssh
+sudo cp ~/.ssh/authorized_keys /home/alexadmin/.ssh/
+sudo chown -R alexadmin:alexadmin /home/alexadmin/.ssh
+sudo chmod 700 /home/alexadmin/.ssh
+sudo chmod 600 /home/alexadmin/.ssh/authorized_keys
+```
 
-Security Rationale:
-Prevents credential stuffing and brute-force attacks.
+Security Impact:
+- Enforces secure key-based authentication
+- Prevents password-based compromise
 
-3️⃣ Network-Level Hardening (AWS Security Group)
+---
 
-Restricted SSH (port 22) to single /32 IP
+## 5️⃣ UFW Firewall Configuration
 
-Opened HTTP/HTTPS only as required
+### Install UFW (if needed)
 
-Removed 0.0.0.0/0 SSH access
+```bash
+sudo apt install ufw -y
+```
 
-Security Rationale:
-Minimizes external attack surface at perimeter layer.
+### Allow Required Services
 
-4️⃣ OS-Level Firewall (UFW)
+```bash
+sudo ufw allow OpenSSH
+sudo ufw allow 'Nginx Full'
+```
 
-Enabled UFW
+### Enable Firewall
 
-Allowed only required services
+```bash
+sudo ufw enable
+```
 
-Verified listening ports
+### Verify Status
 
+```bash
 sudo ufw status verbose
+```
+
+Security Impact:
+- Implements host-based firewall
+- Adds defense-in-depth beyond AWS Security Group
+
+---
+
+## 6️⃣ Install & Configure Fail2Ban
+
+### Install
+
+```bash
+sudo apt install fail2ban -y
+```
+
+### Create Local Jail Configuration
+
+```bash
+sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+```
+
+### Edit Jail Config
+
+```bash
+sudo nano /etc/fail2ban/jail.local
+```
+
+Configured:
+
+```
+[sshd]
+enabled = true
+maxretry = 3
+bantime = 600
+findtime = 600
+```
+
+Restart Fail2Ban:
+
+```bash
+sudo systemctl restart fail2ban
+```
+
+Verify:
+
+```bash
+sudo fail2ban-client status sshd
+```
+
+Security Impact:
+- Automatically bans repeated failed login attempts
+- Mitigates brute-force attacks
+
+---
+
+## 7️⃣ Enable Automatic Security Updates
+
+```bash
+sudo apt install unattended-upgrades -y
+sudo dpkg-reconfigure --priority=low unattended-upgrades
+```
+
+Security Impact:
+- Ensures ongoing patch management
+- Reduces exposure window for vulnerabilities
+
+---
+
+## 🔎 Validation & Verification
+
+### Check Listening Ports
+
+```bash
 sudo ss -tulnp
+```
 
-Security Rationale:
-Implements defense-in-depth beyond cloud firewall.
+### Check Running Services
 
-5️⃣ Intrusion Protection
+```bash
+systemctl list-units --type=service --state=running
+```
 
-Installed Fail2Ban
+### Check SSH Logs
 
-Configured SSH jail
+```bash
+sudo journalctl -u ssh
+```
 
-Set max retries to 3
+---
 
-Configured ban time
+# 🧠 Security Concepts Demonstrated
 
-Security Rationale:
-Automatically blocks repeated failed login attempts.
+- Defense-in-depth (Cloud + OS firewall)
+- Least privilege access control
+- SSH hardening best practices
+- Intrusion prevention mechanisms
+- Patch management
+- Network boundary enforcement
 
-6️⃣ Automatic Security Updates
+---
 
-Enabled unattended-upgrades
+# 🚀 Future Improvements
 
-Security Rationale:
-Ensures ongoing patch management.
+- Implement HTTPS with Let's Encrypt
+- Add CloudWatch monitoring
+- Implement centralized logging
+- Apply CIS Ubuntu Benchmark checks
+- Deploy using Terraform for infrastructure as code
 
-🧠 Lessons Learned
+---
 
-Security Groups are evaluated before OS firewalls.
+# 📌 Summary
 
-Restricting SSH to /32 disables EC2 Instance Connect.
-
-Proper SSH hardening requires testing in a second session to prevent lockout.
-
-Defense-in-depth means cloud + OS-level protection.
-
-🚀 Future Improvements
-
-Configure HTTPS with Let's Encrypt
-
-Implement CloudWatch monitoring
-
-Add log centralization
-
-Implement CIS benchmark checks
+This project demonstrates secure Linux server deployment within AWS using layered hardening techniques. The configuration reduces attack surface, enforces strict access control, and introduces intrusion mitigation mechanisms consistent with infrastructure security best practices.
