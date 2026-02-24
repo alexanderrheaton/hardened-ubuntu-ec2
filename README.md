@@ -115,7 +115,7 @@ MaxAuthTries 3
 LoginGraceTime 30
 AllowUsers alexadmin
 ```
-<img src="images/03-ssh-config.png" width="700">
+<img src="images/04-ssh-config.png" width="700">
 
 Restart SSH:
 
