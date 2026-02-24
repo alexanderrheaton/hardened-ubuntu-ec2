@@ -83,13 +83,12 @@ sudo usermod -aG sudo alexadmin
 ```bash
 groups alexadmin
 ```
-<img src="images/02-adduser.png" width="700">
-
 Expected output includes:
 
 ```
 alexadmin : alexadmin sudo
 ```
+<img src="images/02-adduser.png" width="700">
 
 Security Impact:
 - Removes reliance on default `ubuntu` user
@@ -116,6 +115,7 @@ MaxAuthTries 3
 LoginGraceTime 30
 AllowUsers alexadmin
 ```
+<img src="images/03-ssh-config.png" width="700">
 
 Restart SSH:
 
